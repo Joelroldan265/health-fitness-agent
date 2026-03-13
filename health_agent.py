@@ -63,34 +63,34 @@ def run_with_retry(agent, user_profile, max_retries=3):
                 raise e
 
 def display_dietary_plan(plan_content):
-    with st.expander("📋 Your Personalized Dietary Plan", expanded=True):
+    with st.expander("📋 Tu Plan Dietético Personalizado", expanded=True):
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            st.markdown("### 🎯 Why this plan works")
-            st.info(plan_content.get("why_this_plan_works", "Information not available"))
-            st.markdown("### 🍽️ Meal Plan")
-            st.write(plan_content.get("meal_plan", "Plan not available"))
+            st.markdown("### 🎯 Por qué funciona este plan")
+            st.info(plan_content.get("why_this_plan_works", "Información no disponible"))
+            st.markdown("### 🍽️ Plan de Comidas")
+            st.write(plan_content.get("meal_plan", "Plan no disponible"))
         
         with col2:
-            st.markdown("### ⚠️ Important Considerations")
+            st.markdown("### ⚠️ Consideraciones Importantes")
             considerations = plan_content.get("important_considerations", "").split('\n')
             for consideration in considerations:
                 if consideration.strip():
                     st.warning(consideration)
 
 def display_fitness_plan(plan_content):
-    with st.expander("💪 Your Personalized Fitness Plan", expanded=True):
+    with st.expander("💪 Tu Plan de Fitness Personalizado", expanded=True):
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            st.markdown("### 🎯 Goals")
-            st.success(plan_content.get("goals", "Goals not specified"))
-            st.markdown("### 🏋️‍♂️ Exercise Routine")
-            st.write(plan_content.get("routine", "Routine not available"))
+            st.markdown("### 🎯 Objetivos")
+            st.success(plan_content.get("goals", "Objetivos no especificados"))
+            st.markdown("### 🏋️‍♂️ Rutina de Ejercicios")
+            st.write(plan_content.get("routine", "Rutina no disponible"))
         
         with col2:
-            st.markdown("### 💡 Pro Tips")
+            st.markdown("### 💡 Consejos Pro")
             tips = plan_content.get("tips", "").split('\n')
             for tip in tips:
                 if tip.strip():
@@ -103,102 +103,104 @@ def main():
         st.session_state.qa_pairs = []
         st.session_state.plans_generated = False
 
-    st.title("🏋️‍♂️ AI Health & Fitness Planner")
+    st.title("🏋️‍♂️ Planificador de Salud y Fitness con IA")
     st.markdown("""
         <div style='background-color: #4CAF50; padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem; color: white;'>
-        Get personalized dietary and fitness plans tailored to your goals and preferences.
-        Our AI-powered system considers your unique profile to create the perfect plan for you.
+        Obtén planes personalizados de dieta y fitness adaptados a tus objetivos y preferencias.
+        Nuestro sistema impulsado por IA considera tu perfil único para crear el plan perfecto para ti.
         </div>
     """, unsafe_allow_html=True)
 
-    st.header("👤 Your Profile")
+    st.header("👤 Tu Perfil")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        age = st.number_input("Age", min_value=10, max_value=100, step=1, help="Enter your age")
-        height = st.number_input("Height (cm)", min_value=100.0, max_value=250.0, step=0.1)
+        age = st.number_input("Edad", min_value=10, max_value=100, step=1, help="Ingresa tu edad")
+        height = st.number_input("Altura (cm)", min_value=100.0, max_value=250.0, step=0.1)
         activity_level = st.selectbox(
-            "Activity Level",
-            options=["Sedentary", "Lightly Active", "Moderately Active", "Very Active", "Extremely Active"],
-            help="Choose your typical activity level"
+            "Nivel de Actividad",
+            options=["Sedentario", "Ligero", "Moderado", "Muy Activo", "Extremadamente Activo"],
+            help="Elige tu nivel de actividad típico"
         )
         dietary_preferences = st.selectbox(
-            "Dietary Preferences",
-            options=["Vegetarian", "Keto", "Gluten Free", "Low Carb", "Dairy Free"],
-            help="Select your dietary preference"
+            "Preferencias Dietéticas",
+            options=["Vegetariano", "Keto", "Sin Gluten", "Bajo en Carbohidratos", "Sin Lácteos"],
+            help="Selecciona tu preferencia dietética"
         )
 
     with col2:
-        weight = st.number_input("Weight (kg)", min_value=20.0, max_value=300.0, step=0.1)
-        sex = st.selectbox("Sex", options=["Male", "Female", "Other"])
+        weight = st.number_input("Peso (kg)", min_value=20.0, max_value=300.0, step=0.1)
+        sex = st.selectbox("Sexo", options=["Masculino", "Femenino", "Otro"])
         fitness_goals = st.selectbox(
-            "Fitness Goals",
-            options=["Lose Weight", "Gain Muscle", "Endurance", "Stay Fit", "Strength Training"],
-            help="What do you want to achieve?"
+            "Objetivos de Fitness",
+            options=["Perder Peso", "Ganar Músculo", "Resistencia", "Mantenerse en Forma", "Entrenamiento de Fuerza"],
+            help="¿Qué quieres lograr?"
         )
 
-    if st.button("🎯 Generate My Personalized Plan", use_container_width=True):
-        with st.spinner("Creating your perfect health and fitness routine... (This may take a minute)"):
+    if st.button("🎯 Generar Mi Plan Personalizado", use_container_width=True):
+        with st.spinner("Creando tu rutina perfecta de salud y fitness... (Esto puede tomar un minuto)"):
             try:
                 gemini_model = Gemini(id="gemini-2.5-flash", api_key=gemini_api_key)
                 
                 dietary_agent = Agent(
-                    name="Dietary Expert",
-                    role="Provides personalized dietary recommendations",
+                    name="Experto en Nutrición",
+                    role="Proporciona recomendaciones dietéticas personalizadas",
                     model=gemini_model,
                     instructions=[
-                        "Consider the user's input, including dietary restrictions and preferences.",
-                        "Suggest a detailed meal plan for the day, including breakfast, lunch, dinner, and snacks.",
-                        "Provide a brief explanation of why the plan is suited to the user's goals.",
-                        "Focus on clarity, coherence, and quality of the recommendations.",
+                        "Considera la entrada del usuario, incluyendo restricciones y preferencias dietéticas.",
+                        "Sugiere un plan de comidas detallado para el día, incluyendo desayuno, almuerzo, cena y meriendas.",
+                        "Proporciona una breve explicación de por qué el plan es adecuado para los objetivos del usuario.",
+                        "Enfócate en claridad, coherencia y calidad de las recomendaciones.",
+                        "IMPORTANTE: Responde SIEMPRE en español.",
                     ]
                 )
 
                 fitness_agent = Agent(
-                    name="Fitness Expert",
-                    role="Provides personalized fitness recommendations",
+                    name="Experto en Fitness",
+                    role="Proporciona recomendaciones de fitness personalizadas",
                     model=gemini_model,
                     instructions=[
-                        "Provide exercises tailored to the user's goals.",
-                        "Include warm-up, main workout, and cool-down exercises.",
-                        "Explain the benefits of each recommended exercise.",
-                        "Ensure the plan is actionable and detailed.",
+                        "Proporciona ejercicios personalizados según los objetivos del usuario.",
+                        "Incluye ejercicios de calentamiento, entrenamiento principal y enfriamiento.",
+                        "Explica los beneficios de cada ejercicio recomendado.",
+                        "Asegúrate de que el plan sea accionable y detallado.",
+                        "IMPORTANTE: Responde SIEMPRE en español.",
                     ]
                 )
 
                 user_profile = f"""
-                Age: {age}
-                Weight: {weight}kg
-                Height: {height}cm
-                Sex: {sex}
-                Activity Level: {activity_level}
-                Dietary Preferences: {dietary_preferences}
-                Fitness Goals: {fitness_goals}
+                Edad: {age}
+                Peso: {weight}kg
+                Altura: {height}cm
+                Sexo: {sex}
+                Nivel de Actividad: {activity_level}
+                Preferencias Dietéticas: {dietary_preferences}
+                Objetivos de Fitness: {fitness_goals}
                 """
 
                 # Ejecutar con reintentos
                 dietary_plan_response: RunOutput = run_with_retry(dietary_agent, user_profile)
                 dietary_plan = {
-                    "why_this_plan_works": "High Protein, Healthy Fats, Moderate Carbohydrates, and Caloric Balance",
+                    "why_this_plan_works": "Proteína Alta, Grasas Saludables, Carbohidratos Moderados y Balance Calórico",
                     "meal_plan": dietary_plan_response.content,
                     "important_considerations": """
-                    - Hydration: Drink plenty of water throughout the day
-                    - Electrolytes: Monitor sodium, potassium, and magnesium levels
-                    - Fiber: Ensure adequate intake through vegetables and fruits
-                    - Listen to your body: Adjust portion sizes as needed
+                    - Hidratación: Bebe mucha agua durante el día
+                    - Electrolitos: Monitorea los niveles de sodio, potasio y magnesio
+                    - Fibra: Asegúrate de una ingesta adecuada a través de verduras y frutas
+                    - Escucha tu cuerpo: Ajusta los tamaños de las porciones según sea necesario
                     """
                 }
 
                 fitness_plan_response: RunOutput = run_with_retry(fitness_agent, user_profile)
                 fitness_plan = {
-                    "goals": "Build strength, improve endurance, and maintain overall fitness",
+                    "goals": "Construir fuerza, mejorar resistencia y mantener la forma física general",
                     "routine": fitness_plan_response.content,
                     "tips": """
-                    - Track your progress regularly
-                    - Allow proper rest between workouts
-                    - Focus on proper form
-                    - Stay consistent with your routine
+                    - Registra tu progreso regularmente
+                    - Permite un descanso adecuado entre entrenamientos
+                    - Enfócate en la forma correcta
+                    - Mantén consistencia con tu rutina
                     """
                 }
 
@@ -207,47 +209,52 @@ def main():
                 st.session_state.plans_generated = True
                 st.session_state.qa_pairs = []
 
-                st.success("✅ Plans generated successfully!")
+                st.success("✅ ¡Planes generados exitosamente!")
                 display_dietary_plan(dietary_plan)
                 display_fitness_plan(fitness_plan)
 
             except Exception as e:
-                st.error(f"❌ An error occurred after multiple retries: {e}")
-                st.info("💡 Tip: Please try again in a few moments. The API might be temporarily busy.")
+                st.error(f"❌ Ocurrió un error después de múltiples intentos: {e}")
+                st.info("💡 Consejo: Por favor, intenta de nuevo en unos momentos. La API podría estar temporalmente ocupada.")
 
     if st.session_state.plans_generated:
-        st.header("❓ Questions about your plan?")
-        question_input = st.text_input("What would you like to know?")
+        st.header("❓ ¿Preguntas sobre tu plan?")
+        question_input = st.text_input("¿Qué te gustaría saber?")
 
-        if st.button("Get Answer"):
+        if st.button("Obtener Respuesta"):
             if question_input:
-                with st.spinner("Finding the best answer for you..."):
+                with st.spinner("Encontrando la mejor respuesta para ti..."):
                     dietary_plan = st.session_state.dietary_plan
                     fitness_plan = st.session_state.fitness_plan
 
-                    context = f"Dietary Plan: {dietary_plan.get('meal_plan', '')}\n\nFitness Plan: {fitness_plan.get('routine', '')}"
-                    full_context = f"{context}\nUser Question: {question_input}"
+                    context = f"Plan Dietético: {dietary_plan.get('meal_plan', '')}\n\nPlan de Fitness: {fitness_plan.get('routine', '')}"
+                    full_context = f"{context}\nPregunta del Usuario: {question_input}\n\nIMPORTANTE: Responde SIEMPRE en español."
 
                     try:
                         gemini_model = Gemini(id="gemini-2.5-flash", api_key=gemini_api_key)
-                        agent = Agent(model=gemini_model, debug_mode=True, markdown=True)
+                        agent = Agent(
+                            model=gemini_model, 
+                            debug_mode=True, 
+                            markdown=True,
+                            instructions=["Responde siempre en español de manera clara y útil."]
+                        )
                         run_response: RunOutput = run_with_retry(agent, full_context)
 
                         if hasattr(run_response, 'content'):
                             answer = run_response.content
                         else:
-                            answer = "Sorry, I couldn't generate a response at this time."
+                            answer = "Lo siento, no pude generar una respuesta en este momento."
 
                         st.session_state.qa_pairs.append((question_input, answer))
-                        st.success("✅ Answer generated!")
+                        st.success("✅ ¡Respuesta generada!")
                     except Exception as e:
-                        st.error(f"❌ An error occurred while getting the answer: {e}")
+                        st.error(f"❌ Ocurrió un error al obtener la respuesta: {e}")
 
         if st.session_state.qa_pairs:
-            st.header("💬 Q&A History")
+            st.header("💬 Historial de Preguntas y Respuestas")
             for question, answer in st.session_state.qa_pairs:
-                st.markdown(f"**Q:** {question}")
-                st.markdown(f"**A:** {answer}")
+                st.markdown(f"**P:** {question}")
+                st.markdown(f"**R:** {answer}")
 
 if __name__ == "__main__":
     main()
