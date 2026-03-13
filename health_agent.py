@@ -65,9 +65,9 @@ def run_with_retry(agent, user_profile, max_retries=3):
                 raise e
 
 def generate_pdf_content(user_profile_dict, dietary_plan, fitness_plan):
-    """Genera contenido para PDF"""
+    """Genera contenido para descargar"""
     content = f"""
-╔═════════════════════���══════════════════════════════════════════╗
+╔════════════════════════════════════════════════════════════════╗
 ║        PLAN PERSONALIZADO DE SALUD Y FITNESS CON IA            ║
 ║                   Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}                    ║
 ╚════════════════════════════════════════════════════════════════╝
@@ -84,27 +84,30 @@ Nivel de Actividad: {user_profile_dict['activity_level']}
 Preferencias Dietéticas: {user_profile_dict['dietary_preferences']}
 Objetivos de Fitness: {user_profile_dict['fitness_goals']}
 
-═══════════════════════════════════════════════════════════════════
-🍽️ PLAN DIETÉTICO PERSONALIZADO
+══════════════════���════════════════════════════════════════════════
+🍽️ PLAN DIETÉTICO PERSONALIZADO - 7 DÍAS
 ═══════════════════════════════════════════════════════════════════
 
 🎯 Por qué funciona este plan:
 {dietary_plan.get('why_this_plan_works', 'Información no disponible')}
 
-📊 Plan de Comidas:
+📊 Plan de Comidas por Semana:
 {dietary_plan.get('meal_plan', 'Plan no disponible')}
+
+📚 Guía de Alimentos para Combinar:
+{dietary_plan.get('food_guide', 'Guía no disponible')}
 
 ⚠️ Consideraciones Importantes:
 {dietary_plan.get('important_considerations', 'Información no disponible')}
 
 ═══════════════════════════════════════════════════════════════════
-💪 PLAN DE FITNESS PERSONALIZADO
+💪 PLAN DE FITNESS PERSONALIZADO - 7 DÍAS
 ═══════════════════════════════════════════════════════════════════
 
 🎯 Objetivos:
 {fitness_plan.get('goals', 'Objetivos no especificados')}
 
-🏋️‍♂️ Rutina de Ejercicios:
+🏋️‍♂️ Rutina de Ejercicios por Semana:
 {fitness_plan.get('routine', 'Rutina no disponible')}
 
 💡 Consejos Pro:
@@ -112,23 +115,28 @@ Objetivos de Fitness: {user_profile_dict['fitness_goals']}
 
 ═══════════════════════════════════════════════════════════════════
 ✨ Recuerda:
-- Bebe mucha agua durante el día
-- Duerme lo suficiente
-- Sé consistente con tu plan
-- Escucha a tu cuerpo
+- Variabilidad: Cambia tus comidas durante la semana
+- Hidratación: Bebe mucha agua diariamente
+- Descanso: Duerme 7-8 horas cada noche
+- Consistencia: Sé constante con tu plan
+- Flexibilidad: Ajusta según cómo se sienta tu cuerpo
 ═══════════════════════════════════════════════════════════════════
 """
     return content
 
 def display_dietary_plan(plan_content):
-    with st.expander("📋 Tu Plan Dietético Personalizado", expanded=True):
+    with st.expander("📋 Tu Plan Dietético Personalizado - 7 Días", expanded=True):
         col1, col2 = st.columns([2, 1])
         
         with col1:
             st.markdown("### 🎯 Por qué funciona este plan")
             st.info(plan_content.get("why_this_plan_works", "Información no disponible"))
-            st.markdown("### 🍽️ Plan de Comidas")
+            
+            st.markdown("### 🍽️ Plan de Comidas por Semana (Variado)")
             st.write(plan_content.get("meal_plan", "Plan no disponible"))
+            
+            st.markdown("### 📚 Guía de Alimentos para Combinar")
+            st.write(plan_content.get("food_guide", "Guía no disponible"))
         
         with col2:
             st.markdown("### ⚠️ Consideraciones Importantes")
@@ -138,13 +146,14 @@ def display_dietary_plan(plan_content):
                     st.warning(consideration)
 
 def display_fitness_plan(plan_content):
-    with st.expander("💪 Tu Plan de Fitness Personalizado", expanded=True):
+    with st.expander("💪 Tu Plan de Fitness Personalizado - 7 Días", expanded=True):
         col1, col2 = st.columns([2, 1])
         
         with col1:
             st.markdown("### 🎯 Objetivos")
             st.success(plan_content.get("goals", "Objetivos no especificados"))
-            st.markdown("### 🏋️‍♂️ Rutina de Ejercicios")
+            
+            st.markdown("### 🏋️‍♂️ Rutina de Ejercicios por Semana")
             st.write(plan_content.get("routine", "Rutina no disponible"))
         
         with col2:
@@ -197,8 +206,8 @@ def main():
             help="¿Qué quieres lograr?"
         )
 
-    if st.button("🎯 Generar Mi Plan Personalizado", use_container_width=True):
-        with st.spinner("Creando tu rutina perfecta de salud y fitness... (Esto puede tomar un minuto)"):
+    if st.button("🎯 Generar Mi Plan Personalizado - 7 Días", use_container_width=True):
+        with st.spinner("Creando tu rutina perfecta de salud y fitness para toda la semana... (Esto puede tomar 1-2 minutos)"):
             try:
                 gemini_model = Gemini(id="gemini-2.5-flash", api_key=gemini_api_key)
                 
@@ -208,9 +217,12 @@ def main():
                     model=gemini_model,
                     instructions=[
                         "Considera la entrada del usuario, incluyendo restricciones y preferencias dietéticas.",
-                        "Sugiere un plan de comidas detallado para el día, incluyendo desayuno, almuerzo, cena y meriendas.",
+                        "IMPORTANTE: Sugiere un plan de comidas VARIADO para TODA UNA SEMANA (Lunes a Domingo).",
+                        "Cada día debe tener desayuno, almuerzo, cena y meriendas DIFERENTES.",
+                        "Incluye una guía de combinaciones de alimentos que el usuario puede usar para crear sus propias comidas.",
+                        "La guía debe mostrar qué proteínas, carbohidratos y grasas saludables puede combinar.",
                         "Proporciona una breve explicación de por qué el plan es adecuado para los objetivos del usuario.",
-                        "Enfócate en claridad, coherencia y calidad de las recomendaciones.",
+                        "Enfócate en variedad, claridad, coherencia y calidad de las recomendaciones.",
                         "IMPORTANTE: Responde SIEMPRE en español.",
                     ]
                 )
@@ -221,9 +233,12 @@ def main():
                     model=gemini_model,
                     instructions=[
                         "Proporciona ejercicios personalizados según los objetivos del usuario.",
-                        "Incluye ejercicios de calentamiento, entrenamiento principal y enfriamiento.",
+                        "IMPORTANTE: Crea un plan de entrenamiento VARIADO para TODA UNA SEMANA (Lunes a Domingo).",
+                        "Cada día debe tener ejercicios DIFERENTES, alternando grupos musculares.",
+                        "Incluye días de descanso o ejercicio ligero cuando sea apropiado.",
+                        "Para cada día, incluye calentamiento, ejercicios principales y enfriamiento.",
                         "Explica los beneficios de cada ejercicio recomendado.",
-                        "Asegúrate de que el plan sea accionable y detallado.",
+                        "Asegúrate de que el plan sea variado, accionable y detallado.",
                         "IMPORTANTE: Responde SIEMPRE en español.",
                     ]
                 )
@@ -236,30 +251,37 @@ def main():
                 Nivel de Actividad: {activity_level}
                 Preferencias Dietéticas: {dietary_preferences}
                 Objetivos de Fitness: {fitness_goals}
+                
+                Por favor, proporciona un plan VARIADO para TODA UNA SEMANA (7 días).
                 """
 
                 # Ejecutar con reintentos
                 dietary_plan_response: RunOutput = run_with_retry(dietary_agent, user_profile)
                 dietary_plan = {
-                    "why_this_plan_works": "Proteína Alta, Grasas Saludables, Carbohidratos Moderados y Balance Calórico",
+                    "why_this_plan_works": "Plan variado de 7 días - Proteína Alta, Grasas Saludables, Carbohidratos Moderados y Balance Calórico",
                     "meal_plan": dietary_plan_response.content,
+                    "food_guide": "Guía incluida en el plan de comidas anterior",
                     "important_considerations": """
-                    - Hidratación: Bebe mucha agua durante el día
-                    - Electrolitos: Monitorea los niveles de sodio, potasio y magnesio
+                    - Variabilidad: Come diferente cada día para no aburrirte
+                    - Hidratación: Bebe al menos 2-3 litros de agua diarios
+                    - Electrolitos: Monitorea sodio, potasio y magnesio
                     - Fibra: Asegúrate de una ingesta adecuada a través de verduras y frutas
+                    - Flexibilidad: Puedes cambiar el orden de los días según tu conveniencia
                     - Escucha tu cuerpo: Ajusta los tamaños de las porciones según sea necesario
                     """
                 }
 
                 fitness_plan_response: RunOutput = run_with_retry(fitness_agent, user_profile)
                 fitness_plan = {
-                    "goals": "Construir fuerza, mejorar resistencia y mantener la forma física general",
+                    "goals": "Plan variado de 7 días - Construir fuerza, mejorar resistencia y mantener la forma física general",
                     "routine": fitness_plan_response.content,
                     "tips": """
                     - Registra tu progreso regularmente
-                    - Permite un descanso adecuado entre entrenamientos
-                    - Enfócate en la forma correcta
+                    - Permite un descanso adecuado entre entrenamientos (48 horas para el mismo grupo muscular)
+                    - Enfócate en la forma correcta antes de aumentar el peso
                     - Mantén consistencia con tu rutina
+                    - La variedad es la clave - cambia ejercicios cada 4-6 semanas
+                    - Aumenta gradualmente la intensidad
                     """
                 }
 
@@ -278,7 +300,7 @@ def main():
                     "fitness_goals": fitness_goals
                 }
 
-                st.success("✅ ¡Planes generados exitosamente!")
+                st.success("✅ ¡Planes de 7 días generados exitosamente!")
                 display_dietary_plan(dietary_plan)
                 display_fitness_plan(fitness_plan)
 
@@ -289,7 +311,7 @@ def main():
     # Mostrar opciones de descarga si hay planes generados
     if st.session_state.plans_generated:
         st.markdown("---")
-        st.subheader("📥 Descargar Tu Plan")
+        st.subheader("📥 Descargar Tu Plan de 7 Días")
         
         col1, col2 = st.columns(2)
         
@@ -303,7 +325,7 @@ def main():
             st.download_button(
                 label="📄 Descargar como TXT",
                 data=txt_content,
-                file_name=f"Plan_Salud_Fitness_{datetime.now().strftime('%d_%m_%Y')}.txt",
+                file_name=f"Plan_Salud_Fitness_7Dias_{datetime.now().strftime('%d_%m_%Y')}.txt",
                 mime="text/plain"
             )
         
@@ -311,6 +333,7 @@ def main():
             # Descargar como JSON
             json_data = {
                 "fecha_generacion": datetime.now().isoformat(),
+                "duracion_plan": "7 días",
                 "perfil_usuario": st.session_state.user_profile,
                 "plan_dietetico": st.session_state.dietary_plan,
                 "plan_fitness": st.session_state.fitness_plan
@@ -319,7 +342,7 @@ def main():
             st.download_button(
                 label="📊 Descargar como JSON",
                 data=json_content,
-                file_name=f"Plan_Salud_Fitness_{datetime.now().strftime('%d_%m_%Y')}.json",
+                file_name=f"Plan_Salud_Fitness_7Dias_{datetime.now().strftime('%d_%m_%Y')}.json",
                 mime="application/json"
             )
 
