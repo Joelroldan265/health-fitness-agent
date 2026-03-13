@@ -4,6 +4,8 @@ from agno.run.agent import RunOutput
 from agno.models.google import Gemini
 import os
 import time
+from datetime import datetime
+import json
 
 st.set_page_config(
     page_title="AI Health & Fitness Planner",
@@ -62,6 +64,62 @@ def run_with_retry(agent, user_profile, max_retries=3):
             else:
                 raise e
 
+def generate_pdf_content(user_profile_dict, dietary_plan, fitness_plan):
+    """Genera contenido para PDF"""
+    content = f"""
+╔═════════════════════���══════════════════════════════════════════╗
+║        PLAN PERSONALIZADO DE SALUD Y FITNESS CON IA            ║
+║                   Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}                    ║
+╚════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════
+📋 TU PERFIL
+═══════════════════════════════════════════════════════════════════
+
+Edad: {user_profile_dict['age']} años
+Peso: {user_profile_dict['weight']} kg
+Altura: {user_profile_dict['height']} cm
+Sexo: {user_profile_dict['sex']}
+Nivel de Actividad: {user_profile_dict['activity_level']}
+Preferencias Dietéticas: {user_profile_dict['dietary_preferences']}
+Objetivos de Fitness: {user_profile_dict['fitness_goals']}
+
+═══════════════════════════════════════════════════════════════════
+🍽️ PLAN DIETÉTICO PERSONALIZADO
+═══════════════════════════════════════════════════════════════════
+
+🎯 Por qué funciona este plan:
+{dietary_plan.get('why_this_plan_works', 'Información no disponible')}
+
+📊 Plan de Comidas:
+{dietary_plan.get('meal_plan', 'Plan no disponible')}
+
+⚠️ Consideraciones Importantes:
+{dietary_plan.get('important_considerations', 'Información no disponible')}
+
+═══════════════════════════════════════════════════════════════════
+💪 PLAN DE FITNESS PERSONALIZADO
+═══════════════════════════════════════════════════════════════════
+
+🎯 Objetivos:
+{fitness_plan.get('goals', 'Objetivos no especificados')}
+
+🏋️‍♂️ Rutina de Ejercicios:
+{fitness_plan.get('routine', 'Rutina no disponible')}
+
+💡 Consejos Pro:
+{fitness_plan.get('tips', 'Consejos no disponibles')}
+
+═══════════════════════════════════════════════════════════════════
+✨ Recuerda:
+- Bebe mucha agua durante el día
+- Duerme lo suficiente
+- Sé consistente con tu plan
+- Escucha a tu cuerpo
+═══════════════════════════════════════════════════════════════════
+"""
+    return content
+
 def display_dietary_plan(plan_content):
     with st.expander("📋 Tu Plan Dietético Personalizado", expanded=True):
         col1, col2 = st.columns([2, 1])
@@ -102,6 +160,7 @@ def main():
         st.session_state.fitness_plan = {}
         st.session_state.qa_pairs = []
         st.session_state.plans_generated = False
+        st.session_state.user_profile = {}
 
     st.title("🏋️‍♂️ Planificador de Salud y Fitness con IA")
     st.markdown("""
@@ -204,10 +263,20 @@ def main():
                     """
                 }
 
+                # Guardar en sesión
                 st.session_state.dietary_plan = dietary_plan
                 st.session_state.fitness_plan = fitness_plan
                 st.session_state.plans_generated = True
                 st.session_state.qa_pairs = []
+                st.session_state.user_profile = {
+                    "age": age,
+                    "weight": weight,
+                    "height": height,
+                    "sex": sex,
+                    "activity_level": activity_level,
+                    "dietary_preferences": dietary_preferences,
+                    "fitness_goals": fitness_goals
+                }
 
                 st.success("✅ ¡Planes generados exitosamente!")
                 display_dietary_plan(dietary_plan)
@@ -216,6 +285,43 @@ def main():
             except Exception as e:
                 st.error(f"❌ Ocurrió un error después de múltiples intentos: {e}")
                 st.info("💡 Consejo: Por favor, intenta de nuevo en unos momentos. La API podría estar temporalmente ocupada.")
+
+    # Mostrar opciones de descarga si hay planes generados
+    if st.session_state.plans_generated:
+        st.markdown("---")
+        st.subheader("📥 Descargar Tu Plan")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Descargar como TXT
+            txt_content = generate_pdf_content(
+                st.session_state.user_profile,
+                st.session_state.dietary_plan,
+                st.session_state.fitness_plan
+            )
+            st.download_button(
+                label="📄 Descargar como TXT",
+                data=txt_content,
+                file_name=f"Plan_Salud_Fitness_{datetime.now().strftime('%d_%m_%Y')}.txt",
+                mime="text/plain"
+            )
+        
+        with col2:
+            # Descargar como JSON
+            json_data = {
+                "fecha_generacion": datetime.now().isoformat(),
+                "perfil_usuario": st.session_state.user_profile,
+                "plan_dietetico": st.session_state.dietary_plan,
+                "plan_fitness": st.session_state.fitness_plan
+            }
+            json_content = json.dumps(json_data, ensure_ascii=False, indent=2)
+            st.download_button(
+                label="📊 Descargar como JSON",
+                data=json_content,
+                file_name=f"Plan_Salud_Fitness_{datetime.now().strftime('%d_%m_%Y')}.json",
+                mime="application/json"
+            )
 
     if st.session_state.plans_generated:
         st.header("❓ ¿Preguntas sobre tu plan?")
