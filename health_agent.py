@@ -3,6 +3,7 @@ from agno.agent import Agent
 from agno.run.agent import RunOutput
 from agno.models.google import Gemini
 import os
+import time
 
 st.set_page_config(
     page_title="AI Health & Fitness Planner",
@@ -48,6 +49,19 @@ if not gemini_api_key:
     st.info("Por favor, contacta al administrador para configurar la API Key")
     st.stop()
 
+def run_with_retry(agent, user_profile, max_retries=3):
+    """Ejecuta una solicitud con reintentos automáticos"""
+    for attempt in range(max_retries):
+        try:
+            result = agent.run(user_profile)
+            return result
+        except Exception as e:
+            if attempt < max_retries - 1:
+                st.warning(f"⚠️ Intento {attempt + 1} falló. Reintentando en 2 segundos...")
+                time.sleep(2)
+            else:
+                raise e
+
 def display_dietary_plan(plan_content):
     with st.expander("📋 Your Personalized Dietary Plan", expanded=True):
         col1, col2 = st.columns([2, 1])
@@ -91,7 +105,7 @@ def main():
 
     st.title("🏋️‍♂️ AI Health & Fitness Planner")
     st.markdown("""
-        <div style='background-color: #4CAF50; padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem;'>
+        <div style='background-color: #4CAF50; padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem; color: white;'>
         Get personalized dietary and fitness plans tailored to your goals and preferences.
         Our AI-powered system considers your unique profile to create the perfect plan for you.
         </div>
@@ -125,7 +139,7 @@ def main():
         )
 
     if st.button("🎯 Generate My Personalized Plan", use_container_width=True):
-        with st.spinner("Creating your perfect health and fitness routine..."):
+        with st.spinner("Creating your perfect health and fitness routine... (This may take a minute)"):
             try:
                 gemini_model = Gemini(id="gemini-2.5-flash", api_key=gemini_api_key)
                 
@@ -163,7 +177,8 @@ def main():
                 Fitness Goals: {fitness_goals}
                 """
 
-                dietary_plan_response: RunOutput = dietary_agent.run(user_profile)
+                # Ejecutar con reintentos
+                dietary_plan_response: RunOutput = run_with_retry(dietary_agent, user_profile)
                 dietary_plan = {
                     "why_this_plan_works": "High Protein, Healthy Fats, Moderate Carbohydrates, and Caloric Balance",
                     "meal_plan": dietary_plan_response.content,
@@ -175,7 +190,7 @@ def main():
                     """
                 }
 
-                fitness_plan_response: RunOutput = fitness_agent.run(user_profile)
+                fitness_plan_response: RunOutput = run_with_retry(fitness_agent, user_profile)
                 fitness_plan = {
                     "goals": "Build strength, improve endurance, and maintain overall fitness",
                     "routine": fitness_plan_response.content,
@@ -192,11 +207,13 @@ def main():
                 st.session_state.plans_generated = True
                 st.session_state.qa_pairs = []
 
+                st.success("✅ Plans generated successfully!")
                 display_dietary_plan(dietary_plan)
                 display_fitness_plan(fitness_plan)
 
             except Exception as e:
-                st.error(f"❌ An error occurred: {e}")
+                st.error(f"❌ An error occurred after multiple retries: {e}")
+                st.info("💡 Tip: Please try again in a few moments. The API might be temporarily busy.")
 
     if st.session_state.plans_generated:
         st.header("❓ Questions about your plan?")
@@ -214,7 +231,7 @@ def main():
                     try:
                         gemini_model = Gemini(id="gemini-2.5-flash", api_key=gemini_api_key)
                         agent = Agent(model=gemini_model, debug_mode=True, markdown=True)
-                        run_response: RunOutput = agent.run(full_context)
+                        run_response: RunOutput = run_with_retry(agent, full_context)
 
                         if hasattr(run_response, 'content'):
                             answer = run_response.content
@@ -222,6 +239,7 @@ def main():
                             answer = "Sorry, I couldn't generate a response at this time."
 
                         st.session_state.qa_pairs.append((question_input, answer))
+                        st.success("✅ Answer generated!")
                     except Exception as e:
                         st.error(f"❌ An error occurred while getting the answer: {e}")
 
